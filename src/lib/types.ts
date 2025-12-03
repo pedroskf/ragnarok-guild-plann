@@ -16,6 +16,7 @@ export interface Group {
   id: number
   name: string
   members: Member[]
+  eventType: EventType
 }
 
 export type EventType = 'woe' | 'te'
@@ -34,8 +35,9 @@ export const WOE_CLASSES = [
   'Genetic',
   'Minstrel',
   'Wanderer',
-  'Kagerou',
-  'Oboro'
+  'Doram',
+  'Soul Linker',
+  'Coringa'
 ] as const
 
 export const TE_CLASSES = [
@@ -51,7 +53,8 @@ export const TE_CLASSES = [
   'High Priest',
   'Champion',
   'Biochemist',
-  'Soul Linker'
+  'Soul Linker',
+  'Coringa'
 ] as const
 
 export type WoeClass = typeof WOE_CLASSES[number]

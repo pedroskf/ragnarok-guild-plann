@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { PresencaData } from '@/lib/types'
 import { toast } from 'sonner'
+import { Upload } from '@phosphor-icons/react'
 
 interface ImportDialogProps {
   open: boolean
@@ -21,6 +22,48 @@ interface ImportDialogProps {
 export function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
   const [woeJson, setWoeJson] = useState('')
   const [teJson, setTeJson] = useState('')
+  const [activeTab, setActiveTab] = useState('woe')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.json')) {
+      toast.error('Por favor, selecione um arquivo JSON')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        const data = JSON.parse(content)
+        
+        if (!Array.isArray(data)) {
+          toast.error('O arquivo deve conter um array JSON')
+          return
+        }
+
+        if (activeTab === 'woe') {
+          setWoeJson(JSON.stringify(data, null, 2))
+        } else {
+          setTeJson(JSON.stringify(data, null, 2))
+        }
+        
+        toast.success(`Arquivo carregado: ${data.length} membros`)
+      } catch (error) {
+        toast.error('Erro ao ler arquivo: JSON inválido')
+        console.error(error)
+      }
+    }
+    reader.readAsText(file)
+    
+    // Reset input para permitir upload do mesmo arquivo novamente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const handleImport = () => {
     try {
@@ -96,13 +139,32 @@ export function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="woe" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="woe">WOE</TabsTrigger>
             <TabsTrigger value="te">WOE TE</TabsTrigger>
           </TabsList>
 
           <TabsContent value="woe" className="space-y-2">
+            <div className="flex gap-2 mb-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload-woe"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={16} className="mr-2" weight="bold" />
+                Carregar arquivo JSON
+              </Button>
+            </div>
             <Textarea
               placeholder='[{"user_id": "123", "char": "nome", "nome": "player", "classe": "Rune Knight", "nivel": 175, "data": "2025-12-02T19:44:32.153782"}]'
               value={woeJson}
@@ -112,6 +174,17 @@ export function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps
           </TabsContent>
 
           <TabsContent value="te" className="space-y-2">
+            <div className="flex gap-2 mb-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={16} className="mr-2" weight="bold" />
+                Carregar arquivo JSON
+              </Button>
+            </div>
             <Textarea
               placeholder='[{"user_id": "456", "char": "nome", "nome": "player", "classe": "Lord Knight", "nivel": 99, "data": "2025-12-02T21:25:00.000000"}]'
               value={teJson}
